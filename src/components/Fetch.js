@@ -36,8 +36,8 @@ const FetchWeather = () => {
   };
 
   return (
-    <div>
-        <h2><b>Weather Forecast</b></h2>
+    <div className='weather'>
+        <h2><b>Weather Forecast Searcher</b></h2>
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <input
           type="text"
@@ -48,17 +48,25 @@ const FetchWeather = () => {
         <button onClick={handleSearchClick} style={{ marginLeft: '10px' }}>🔍</button>
       </div>
       {weatherData && (
-        <div><b>
-                <h3>Weather in {weatherData.name}</h3>
-                <p>Temperature: {weatherData.main.temp}°C</p>
-                <p>Feels like: {weatherData.main.feels_like}°C</p>
-                <p>Weather: {weatherData.weather[0].description}</p>
-                <p>Humidity: {weatherData.main.humidity}%</p>
-                <p>Wind Speed: {weatherData.wind.speed} m/s</p>
-                <p>Sunrise: {formatTime(weatherData.sys.sunrise)}</p>
-                <p>Sunset: {formatTime(weatherData.sys.sunset)}</p>
-          </b>
-        </div>
+        <div className='container'>
+        <b><h3>Weather in {weatherData.name}</h3>
+            <div className='first'>
+            <p>Temperature: {weatherData.main.temp}°C</p>
+            <p>Feels like: {weatherData.main.feels_like}°C</p>
+            </div>
+            <div className='second'>
+            <p>Weather: {weatherData.weather[0].description}</p>
+            <p>Humidity: {weatherData.main.humidity}%</p>
+            </div>
+            <div className='third'>
+            <p>Wind Speed: {weatherData.wind.speed} m/s</p>
+            <p>Sunrise: {formatTime(weatherData.sys.sunrise)}</p>
+            </div>
+            <div className='sun'>
+            <p>Sunset: {formatTime(weatherData.sys.sunset)}</p>
+            </div>
+      </b>
+    </div>
       )}
     </div>
   );

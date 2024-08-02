@@ -45,7 +45,6 @@ body {
 
 .App {
   text-align: center;
-  background-color: rgba(255, 255, 255, 0.8);
   padding: 20px;
   border-radius: 10px;
 }
@@ -68,13 +67,25 @@ body {
   margin-left: 10px;
   cursor: pointer;
 }
+.container { 
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border-radius: 10px;
+}
 
-.weather-card {
+.weather{
   display: flex;
   flex-direction: column;
   align-items: center;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
+  justify-content: center;
+}
+.weather-card {
+  display: flex;
+  align-items: center;
+  color: rgb(0, 0, 0);
   padding: 20px;
   border-radius: 10px;
 }
@@ -85,4 +96,36 @@ body {
 
 .weather-card p {
   margin: 5px 0;
+}
+
+.first{
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 40px;
+  padding-inline-start: 10%;
+  padding-right: 10%;
+}
+
+.second{
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 40px;
+  padding-inline-start: 5%;
+  padding-right: 10%;
+}
+
+.third{
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 50px;
+  padding-inline-start: 10%;
+  padding-right: 10%;
+  margin-left: 10%;
+}
+
+.sun{
+  padding-left: 5%;
 }
