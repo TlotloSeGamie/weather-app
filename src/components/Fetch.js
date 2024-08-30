@@ -4,6 +4,7 @@ const FetchWeather = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [weatherData, setWeatherData] = useState(null);
   const [forecastData, setForecastData] = useState(null);
+  const [threeHourData, setThreeHourData] = useState(null);
   const [locationError, setLocationError] = useState('');
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [modalOpen, setModalOpen] = useState(null);
@@ -23,6 +24,13 @@ const FetchWeather = () => {
       const forecastData = await forecastResponse.json();
       setWeatherData(weatherData);
       setForecastData(forecastData);
+
+      const currentTime = Date.now() / 1000;
+      const threeHourForecast = forecastData.list.filter(item => {
+        const itemTime = item.dt;
+        return itemTime > currentTime && itemTime <= currentTime + 10800; // 10800 seconds = 3 hours
+      });
+      setThreeHourData(threeHourForecast);
     } catch (error) {
       console.error('Error fetching weather:', error);
     }
@@ -73,6 +81,13 @@ const FetchWeather = () => {
       );
       const data = await response.json();
       setForecastData(data);
+
+      const currentTime = Date.now() / 1000;
+      const threeHourForecast = data.list.filter(item => {
+        const itemTime = item.dt;
+        return itemTime > currentTime && itemTime <= currentTime + 10800; // 10800 seconds = 3 hours
+      });
+      setThreeHourData(threeHourForecast);
     } catch (error) {
       console.error('Error fetching forecast:', error);
     }
@@ -128,6 +143,20 @@ const FetchWeather = () => {
               <p><strong>Sunrise:</strong> {formatTime(weatherData.sys.sunrise)}</p>
               <p><strong>Sunset:</strong> {formatTime(weatherData.sys.sunset)}</p>
             </div>
+          </div>
+        </div>
+      )}
+      {threeHourData && (
+        <div className='three-hour-forecast'>
+          <h3>Weather Forecast for Next 3 Hours</h3>
+          <div className='three-hour-items'>
+            {threeHourData.map((item, index) => (
+              <div key={index} className='three-hour-item'>
+                <p>{new Date(item.dt * 1000).toLocaleTimeString()}</p>
+                <p><strong>Temp:</strong> {item.main.temp}°C</p>
+                <p><strong>Weather:</strong> {item.weather[0].description}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
