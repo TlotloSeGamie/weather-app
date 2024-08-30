@@ -3,6 +3,274 @@ import React, { useState, useEffect } from 'react';
 const FetchWeather = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [weatherData, setWeatherData] = useState(null);
+  const [threeHourData, setThreeHourData] = useState([]);
+  const [sixHourData, setSixHourData] = useState([]);
+  const [locationError, setLocationError] = useState('');
+  const [nearbyPlaces, setNearbyPlaces] = useState([]);
+  const [modalOpen, setModalOpen] = useState(null);
+
+  const fetchWeather = async (lat, lon) => {
+    try {
+      const weatherResponse = await fetch(
+        `http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=fe9a214daa542ac38cf93efa22dbf3fb&units=metric`
+      );
+      const forecastResponse = await fetch(
+        `http://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=fe9a214daa542ac38cf93efa22dbf3fb&units=metric`
+      );
+      if (!weatherResponse.ok || !forecastResponse.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const weatherData = await weatherResponse.json();
+      const forecastData = await forecastResponse.json();
+      setWeatherData(weatherData);
+
+      const currentTime = Date.now() / 1000;
+      const threeHourForecast = forecastData.list.filter((item) => {
+        const itemTime = item.dt;
+        return (
+          itemTime >= currentTime &&
+          itemTime <= currentTime + 10800 // 10800 seconds = 3 hours
+        );
+      });
+
+      const sixHourForecast = forecastData.list.filter((item) => {
+        const itemTime = item.dt;
+        return (
+          itemTime >= currentTime + 10800 &&
+          itemTime <= currentTime + 21600 // 21600 seconds = 6 hours
+        );
+      });
+
+      setThreeHourData(threeHourForecast.slice(0, 1));
+      setSixHourData(sixHourForecast.slice(0, 1));
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+    }
+  };
+
+  const fetchNearbyPlaces = async (lat, lon) => {
+    try {
+      const response = await fetch(
+        `http://api.openweathermap.org/data/2.5/find?lat=${lat}&lon=${lon}&cnt=10&radius=1200&appid=fe9a214daa542ac38cf93efa22dbf3fb&units=metric`
+      );
+      const data = await response.json();
+      const filteredPlaces = data.list.filter(
+        (place) => place.coord.lat !== lat || place.coord.lon !== lon
+      );
+
+      const updatedPlaces = await Promise.all(
+        filteredPlaces.map(async (place) => {
+          const forecastResponse = await fetch(
+            `http://api.openweathermap.org/data/2.5/forecast?lat=${place.coord.lat}&lon=${place.coord.lon}&appid=fe9a214daa542ac38cf93efa22dbf3fb&units=metric`
+          );
+          const forecastData = await forecastResponse.json();
+          const currentTime = Date.now() / 1000;
+          const threeHourForecast = forecastData.list.filter((item) => {
+            const itemTime = item.dt;
+            return (
+              itemTime >= currentTime &&
+              itemTime <= currentTime + 10800 // 10800 seconds = 3 hours
+            );
+          });
+
+          const sixHourForecast = forecastData.list.filter((item) => {
+            const itemTime = item.dt;
+            return (
+              itemTime >= currentTime + 10800 &&
+              itemTime <= currentTime + 21600 // 21600 seconds = 6 hours
+            );
+          });
+
+          return {
+            ...place,
+            threeHourData: threeHourForecast.slice(0, 1),
+            sixHourData: sixHourForecast.slice(0, 1),
+          };
+        })
+      );
+      setNearbyPlaces(updatedPlaces);
+    } catch (error) {
+      console.error('Error fetching nearby places:', error);
+    }
+  };
+
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleSearchClick = () => {
+    if (searchTerm) {
+      fetchWeatherByCity(searchTerm);
+    }
+  };
+
+  const fetchWeatherByCity = async (city) => {
+    try {
+      const response = await fetch(
+        `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=fe9a214daa542ac38cf93efa22dbf3fb&units=metric`
+      );
+      const data = await response.json();
+      setWeatherData(data);
+      fetchForecast(city);
+    } catch (error) {
+      console.error('Error fetching weather:', error);
+    }
+  };
+
+  const fetchForecast = async (city) => {
+    try {
+      const response = await fetch(
+        `http://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=fe9a214daa542ac38cf93efa22dbf3fb&units=metric`
+      );
+      const data = await response.json();
+
+      const currentTime = Date.now() / 1000;
+      const threeHourForecast = data.list.filter((item) => {
+        const itemTime = item.dt;
+        return (
+          itemTime >= currentTime &&
+          itemTime <= currentTime + 10800 // 10800 seconds = 3 hours
+        );
+      });
+
+      const sixHourForecast = data.list.filter((item) => {
+        const itemTime = item.dt;
+        return (
+          itemTime >= currentTime + 10800 &&
+          itemTime <= currentTime + 21600 // 21600 seconds = 6 hours
+        );
+      });
+
+      setThreeHourData(threeHourForecast.slice(0, 1));
+      setSixHourData(sixHourForecast.slice(0, 1));
+    } catch (error) {
+      console.error('Error fetching forecast:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          fetchWeather(latitude, longitude);
+          fetchNearbyPlaces(latitude, longitude);
+        },
+        (error) => {
+          setLocationError('Unable to retrieve your location.');
+        }
+      );
+    }
+  }, []);
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleTimeString();
+  };
+
+  const toggleModal = (index) => {
+    setModalOpen(modalOpen === index ? null : index);
+  };
+
+  return (
+    <div className='App'>
+      <h2>Weather Forecast Searcher</h2>
+      <div className='search-container'>
+        <input
+          type="text"
+          placeholder="Search city"
+          value={searchTerm}
+          onChange={handleSearchChange}
+        />
+        <button onClick={handleSearchClick}>🔍</button>
+      </div>
+      {locationError && <p>{locationError}</p>}
+      {weatherData && (
+        <div className='weather'>
+          <h3>Weather in {weatherData.name}</h3>
+          <div className='weather-card'>
+            <div className='info'>
+              <p><strong>Temperature:</strong> {weatherData.main.temp}°C</p>
+              <p><strong>Feels like:</strong> {weatherData.main.feels_like}°C</p>
+              <p><strong>Weather:</strong> {weatherData.weather[0].description}</p>
+              <p><strong>Humidity:</strong> {weatherData.main.humidity}%</p>
+              <p><strong>Wind Speed:</strong> {weatherData.wind.speed} m/s</p>
+              <p><strong>Sunrise:</strong> {formatTime(weatherData.sys.sunrise)}</p>
+              <p><strong>Sunset:</strong> {formatTime(weatherData.sys.sunset)}</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {threeHourData.length > 0 && sixHourData.length > 0 && (
+        <div className='hourly-forecast'>
+          <h3>Weather Report in the Next 3 and 6 Hours</h3>
+          <div className='hourly-items'>
+            <div className='hourly-item'>
+              <p>In 3 Hours: {formatTime(threeHourData[0].dt)}</p>
+              <p><strong>Temp:</strong> {threeHourData[0].main.temp}°C</p>
+              <p><strong>Weather:</strong> {threeHourData[0].weather[0].description}</p>
+              <p><strong>Humidity:</strong> {threeHourData[0].main.humidity}%</p>
+              <p><strong>Wind Speed:</strong> {threeHourData[0].wind.speed} m/s</p>
+            </div>
+            <div className='hourly-item'>
+              <p>In 6 Hours: {formatTime(sixHourData[0].dt)}</p>
+              <p><strong>Temp:</strong> {sixHourData[0].main.temp}°C</p>
+              <p><strong>Weather:</strong> {sixHourData[0].weather[0].description}</p>
+              <p><strong>Humidity:</strong> {sixHourData[0].main.humidity}%</p>
+              <p><strong>Wind Speed:</strong> {sixHourData[0].wind.speed} m/s</p>
+            </div>
+          </div>
+        </div>
+      )}
+      <h3>Nearby Places</h3>
+      {nearbyPlaces.length > 0 ? (
+        <div className='nearby-places'>
+          {nearbyPlaces.map((place, index) => (
+            <div key={index} className='nearby-place'>
+              <h4>{place.name}</h4>
+              <button onClick={() => toggleModal(index)}>See More</button>
+              {modalOpen === index && (
+                <div className='modal'>
+                  <h5>In 3 Hours:</h5>
+                  <p><strong>Temp:</strong> {place.threeHourData[0].main.temp}°C</p>
+                  <p><strong>Weather:</strong> {place.threeHourData[0].weather[0].description}</p>
+                  <p><strong>Humidity:</strong> {place.threeHourData[0].main.humidity}%</p>
+                  <p><strong>Wind Speed:</strong> {place.threeHourData[0].wind.speed} m/s</p>
+
+                  <h5>In 6 Hours:</h5>
+                  <p><strong>Temp:</strong> {place.sixHourData[0].main.temp}°C</p>
+                  <p><strong>Weather:</strong> {place.sixHourData[0].weather[0].description}</p>
+                  <p><strong>Humidity:</strong> {place.sixHourData[0].main.humidity}%</p>
+                  <p><strong>Wind Speed:</strong> {place.sixHourData[0].wind.speed} m/s</p>
+
+                  <button onClick={() => toggleModal(null)}>Close</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p>No nearby places found.</p>
+      )}
+    </div>
+  );
+};
+
+export default FetchWeather;
+
+
+
+
+
+
+
+
+
+import React, { useState, useEffect } from 'react';
+
+const FetchWeather = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [weatherData, setWeatherData] = useState(null);
   const [forecastData, setForecastData] = useState(null);
   const [threeHourData, setThreeHourData] = useState([]);
   const [sixHourData, setSixHourData] = useState([]);
