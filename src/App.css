@@ -158,6 +158,12 @@ h2 {
   transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+.modal-content .close {
+  cursor: pointer;
+  right: 0;
+  list-style: none;
+}
+
 .modal-content h3 {
   margin-top: 0;
   font-size: 1.5rem;
