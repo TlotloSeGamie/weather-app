@@ -7,8 +7,10 @@ const FetchWeather = () => {
   const [locationError, setLocationError] = useState('');
   const [nearbyPlaces, setNearbyPlaces] = useState([]);
   const [modalOpen, setModalOpen] = useState(null);
-  const [tempUnit, setTempUnit] = useState('metric'); // Default is metric (Celsius)
-  const [theme, setTheme] = useState('default'); // Default theme
+  const [tempUnit, setTempUnit] = useState('metric'); 
+  const [theme, setTheme] = useState('default'); 
+  const [savedLocations, setSavedLocations] = useState([]); 
+  const [currentLocation, setCurrentLocation] = useState(null); 
 
   const fetchWeather = async (lat, lon) => {
     try {
@@ -25,8 +27,37 @@ const FetchWeather = () => {
       const forecastData = await forecastResponse.json();
       setWeatherData(weatherData);
       setForecastData(forecastData);
+      checkForSevereWeather(weatherData); // Check for severe weather alerts
     } catch (error) {
       console.error('Error fetching weather:', error);
+    }
+  };
+
+  const checkForSevereWeather = (data) => {
+    if (data && data.weather && data.weather.length > 0) {
+      const severeConditions = ['Thunderstorm', 'Tornado', 'Hurricane', 'Extreme'];
+      const alertCondition = data.weather.find((condition) =>
+        severeConditions.includes(condition.main)
+      );
+      if (alertCondition) {
+        triggerNotification(`Severe Weather Alert: ${alertCondition.main}`, `Description: ${alertCondition.description}`);
+      }
+    }
+  };
+
+  const triggerNotification = (title, body) => {
+    if (!("Notification" in window)) {
+      console.warn("This browser does not support desktop notifications");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      new Notification(title, { body });
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then((permission) => {
+        if (permission === "granted") {
+          new Notification(title, { body });
+        }
+      });
     }
   };
 
@@ -63,6 +94,7 @@ const FetchWeather = () => {
       const data = await response.json();
       setWeatherData(data);
       fetchForecast(city);
+      checkForSevereWeather(data); // Check for severe weather alerts
     } catch (error) {
       console.error('Error fetching weather:', error);
     }
@@ -81,12 +113,12 @@ const FetchWeather = () => {
   };
 
   const KIMBERLEY_COORDS = { lat: -28.7385, lon: 24.7638 };
+
   useEffect(() => {
-    // Fetch weather data for Kimberley
     fetchWeather(KIMBERLEY_COORDS.lat, KIMBERLEY_COORDS.lon);
-    // Fetch nearby places based on Kimberley location
     fetchNearbyPlaces(KIMBERLEY_COORDS.lat, KIMBERLEY_COORDS.lon);
-  }, [tempUnit]); // Re-fetch weather data when tempUnit changes
+    setCurrentLocation(KIMBERLEY_COORDS); // Initialize with Kimberley
+  }, [tempUnit]); 
 
   const formatTemperature = (temp) => {
     return tempUnit === 'metric' ? `${temp}°C` : `${((temp * 9/5) + 32).toFixed(1)}°F`;
@@ -109,6 +141,32 @@ const FetchWeather = () => {
     setTheme(prevTheme => (prevTheme === 'default' ? 'dark' : 'default'));
   };
 
+  // NEW: Save the current location
+  const saveCurrentLocation = () => {
+    if (currentLocation && weatherData) {
+      const newLocation = {
+        name: weatherData.name,
+        lat: currentLocation.lat,
+        lon: currentLocation.lon
+      };
+      setSavedLocations([...savedLocations, newLocation]);
+    }
+  };
+
+  // NEW: Switch to a saved location
+  const switchLocation = (location) => {
+    setCurrentLocation(location);
+    fetchWeather(location.lat, location.lon);
+    fetchNearbyPlaces(location.lat, location.lon);
+  };
+
+  // NEW: Handle manual input of coordinates
+  const handleCoordinateInput = (lat, lon) => {
+    setCurrentLocation({ lat, lon });
+    fetchWeather(lat, lon);
+    fetchNearbyPlaces(lat, lon);
+  };
+
   return (
     <div className='main-container'>
       <div className={`App ${theme}`}>
@@ -116,11 +174,35 @@ const FetchWeather = () => {
         <div className='search-container'>
           <input
             type="text"
-            placeholder="Search city"
+            placeholder="Search city or input coordinates (e.g., 'lat,lon')"
             value={searchTerm}
             onChange={handleSearchChange}
           />
-          <button onClick={handleSearchClick}>🔍</button>
+          <button onClick={() => {
+            if (searchTerm.includes(',')) {
+              const [lat, lon] = searchTerm.split(',').map(coord => parseFloat(coord.trim()));
+              handleCoordinateInput(lat, lon);
+            } else {
+              handleSearchClick();
+            }
+          }}>🔍</button>
+        </div>
+        <button onClick={saveCurrentLocation}>Save Current Location</button>
+        <div className="saved-locations">
+          <h3>Saved Locations</h3>
+          {savedLocations.length > 0 ? (
+            <ul>
+              {savedLocations.map((location, index) => (
+                <li key={index}>
+                  <button onClick={() => switchLocation(location)}>
+                    {location.name} (Lat: {location.lat}, Lon: {location.lon})
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No saved locations yet.</p>
+          )}
         </div>
         <button onClick={handleTempUnitToggle}>
           Switch to {tempUnit === 'metric' ? 'Fahrenheit' : 'Celsius'}
@@ -131,7 +213,7 @@ const FetchWeather = () => {
         {locationError && <p>{locationError}</p>}
         {weatherData && (
           <div className='weather'>
-            <h3>Weather in Kimberley</h3>
+            <h3>Weather in {weatherData.name}</h3>
             <div className='weather-card'>
               <div className='info'>
                 <p><strong>Temperature:</strong> {formatTemperature(weatherData.main.temp)}</p>

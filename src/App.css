@@ -11,6 +11,14 @@ body {
 }
 .main.container {
   display: flex;
+  width: 100%;
+  justify-content: center;
+  font-family: 'Arial', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(to bottom, #87CEEB, #4682B4);
+  color: #fff;
+  text-align: center;
 }
 
 
@@ -368,4 +376,19 @@ button:hover {
   position: absolute;
   top: 10px;
   right: 10px;
+}
+
+.privacy-link {
+  display: block;
+  margin: 10px 0;
+  font-size: 1rem;
+  color: lightgrey;
+  text-decoration: none;
+  font-weight: bold;
+  text-align: center;
+}
+
+.privacy-link:hover {
+  color: white;
+  text-decoration: underline;
 }
