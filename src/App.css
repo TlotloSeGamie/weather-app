@@ -392,3 +392,25 @@ button:hover {
   color: white;
   text-decoration: underline;
 }
+
+.saved-locations ul {
+  list-style-type: none;  
+  padding: 0;  
+  margin: 0;  
+}
+
+.saved-locations li {
+  margin-bottom: 10px; 
+}
+
+.saved-locations button {
+  padding: 8px 12px;  
+  border-radius: 4px; 
+  background-color: #747b8e; 
+  border: 1px solid #ccc; 
+  cursor: pointer;
+}
+
+.saved-locations button:hover {
+  background-color: #161616; 
+}

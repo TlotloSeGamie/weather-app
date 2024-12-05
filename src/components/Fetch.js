@@ -27,7 +27,7 @@ const FetchWeather = () => {
       const forecastData = await forecastResponse.json();
       setWeatherData(weatherData);
       setForecastData(forecastData);
-      checkForSevereWeather(weatherData); // Check for severe weather alerts
+      checkForSevereWeather(weatherData); 
     } catch (error) {
       console.error('Error fetching weather:', error);
     }
@@ -94,7 +94,7 @@ const FetchWeather = () => {
       const data = await response.json();
       setWeatherData(data);
       fetchForecast(city);
-      checkForSevereWeather(data); // Check for severe weather alerts
+      checkForSevereWeather(data); 
     } catch (error) {
       console.error('Error fetching weather:', error);
     }
@@ -117,7 +117,7 @@ const FetchWeather = () => {
   useEffect(() => {
     fetchWeather(KIMBERLEY_COORDS.lat, KIMBERLEY_COORDS.lon);
     fetchNearbyPlaces(KIMBERLEY_COORDS.lat, KIMBERLEY_COORDS.lon);
-    setCurrentLocation(KIMBERLEY_COORDS); // Initialize with Kimberley
+    setCurrentLocation(KIMBERLEY_COORDS); 
   }, [tempUnit]); 
 
   const formatTemperature = (temp) => {
@@ -141,7 +141,6 @@ const FetchWeather = () => {
     setTheme(prevTheme => (prevTheme === 'default' ? 'dark' : 'default'));
   };
 
-  // NEW: Save the current location
   const saveCurrentLocation = () => {
     if (currentLocation && weatherData) {
       const newLocation = {
@@ -153,14 +152,12 @@ const FetchWeather = () => {
     }
   };
 
-  // NEW: Switch to a saved location
   const switchLocation = (location) => {
     setCurrentLocation(location);
     fetchWeather(location.lat, location.lon);
     fetchNearbyPlaces(location.lat, location.lon);
   };
 
-  // NEW: Handle manual input of coordinates
   const handleCoordinateInput = (lat, lon) => {
     setCurrentLocation({ lat, lon });
     fetchWeather(lat, lon);
